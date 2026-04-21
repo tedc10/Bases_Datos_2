@@ -6,8 +6,6 @@ Ejercicios base de datos 2.
 
 -- Columnas necesarias: Nombre empleado, apellido empleado, cantidad trabajos  
 
-  
-
 SELECT E.FIRST_NAME, E.LAST_NAME, H.EMPLOYEE_ID, COUNT(*) AS cantidad 
 
 FROM HR.JOB_HISTORY H JOIN HR.EMPLOYEES E 
@@ -20,15 +18,11 @@ E.FIRST_NAME, E.LAST_NAME, H.EMPLOYEE_ID
 
 HAVING COUNT (*) > 1; 
 
- 
-
 2: 
 
 --Identifique todos los empleados que vivan o trabajen en Europa y tengan rango entre un salario entre 4 mil dólares y 6 mil dólares. 
 
 -- Columnas necesarias: Nombre y apellidos una solo columna, País al que pertenece, Salario que tiene 
-
- 
 
 SELECT CONCAT (E.FIRST_NAME, ' ', E.LAST_NAME) AS NAME, C.COUNTRY_NAME AS COUNTRY, E.SALARY 
 
@@ -52,15 +46,11 @@ ON C.REGION_ID = R.REGION_ID
 
 WHERE R.REGION_ID = 10 AND E.SALARY BETWEEN 4000 AND 6000 
 
- 
-
 3:  
 
 -- Proyectar en orden jerárquico de los cargos de los empleados, mostrar el nombre del empelado y sus jefes 
 
 -- empleado, jefe, extraer emails de los dos (Las primeras 3 letras, luego rellenar 6 asteriscos a la izquierda)  
-
- 
 
 SELECT 
 
@@ -74,8 +64,6 @@ SELECT
 
     '******' || SUBSTR(M.EMAIL, 1, 3) AS EMAIL_JEFE 
 
- 
-
 FROM HR.EMPLOYEES E 
 
 LEFT JOIN HR.EMPLOYEES M  
@@ -84,22 +72,22 @@ LEFT JOIN HR.EMPLOYEES M
 
 ORDER BY E.LAST_NAME; 
 
- 
-
 4: 
 
 -- = ESTO ES PARA COPIAR LA TABLA  
 
  CREATE TABLE EMPLOYEES_2 AS SELECT * FROM HR.EMPLOYEES; 
 
- 
-
 -- CREATE TABLA EMPLOYEES_2 SELECT FIRST_NAME, LAST_NAME FROM HR.EMPLOYEES WHERE DEPT=80; = SOLO ALGUNAS COLUMNAS ESPECIFICAS  
 
 -- CREATE TABLE EMPLOYEES_2 SELECT e* FROM HR.EMPLOYEES; = COPIAR TODAS LAS TABLAS 
-
  
 (Clase del dia 11 de febrero hicimos capitulo 1 "learn sql")
  
-
- 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- LOS DEMÁS EJERCICIOS DE CLASE ESTÁN EN LOS SCRIPTS DE LA SECCIÓN PL SQL, QUE FUERON TRABAJADOS DURANTE LAS FECHAS ESTIPULADAS EN LOIS NOMBRES DE LOS SCRIPTS --
+ -------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
