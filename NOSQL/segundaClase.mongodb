@@ -1,0 +1,79 @@
+//Todos los sitios que tienen antiguedad mayor o igual a 5 años y pertenezcan a la ciudad de chicago
+
+use("sample_airbnb")
+
+db.listingsAndReviews.find({
+    "address.market": "Porto",
+    last_scraped: {
+        $lte: ISODate("2021-01-01T00:00:00Z")
+    }
+})
+
+//Todos los sitios que tienen antiguedad mayor o igual a 5 años
+//  y pertenezcan a la ciudad de chicago, PERO SOLO LA DIRECCION COMPLETA
+
+// todas estas con db.usuarios.find
+//$in valores de una lista
+//$nin valores que no estan de una lista
+//$gt mayor que
+//$gte mayor igual que 
+//$lt menor que
+//$lte menor igual que 
+//$exists: true ---> buscar un dato en un documento 
+//$elemMatch hacer match con otro documento que al menos un elemento de la lista se debe cumplir 
+//$eq operador de comparación que busca coincidencias exactas
+
+//Todos los apartamentos y que dentro de lo que ofrece tenga Tv por cable y wifi usando $elemMatchdb.listings.find({
+
+use("sample_airbnb")
+db.listingsAndReviews.find({
+    property_type: "Apartment",
+    $and: [
+        { amenities: { $elemMatch: { $eq: "Wifi" } } },
+        { amenities: { $elemMatch: { $eq: "Cable TV" } } }
+    ]
+})
+
+//Todos los apartamentos y que dentro de lo que ofrece tenga Tv por cable y wifi usando $elemMatchdb.listings.find 
+// Solo moestrar el pais y el con numero de camas
+
+use("sample_airbnb")
+db.listingsAndReviews.find(
+    {
+        property_type: "Apartment",
+        $and: [
+            { amenities: { $elemMatch: { $eq: "Wifi" } } },
+            { amenities: { $elemMatch: { $eq: "Cable TV" } } }
+        ]
+    },
+    {
+        "address.country": 1,
+        beds: 1,
+        _id:0
+    }
+)
+
+// -----todas estas con db.usuarios.agregate son para agregar
+// $group agrupar datos 
+
+//Todos los apartamentos y que dentro de lo que ofrece tenga Tv por cable y wifi usando $elemMatchdb.listings.find 
+// Solo mostrar el pais y el con numero de camas y cuanto valen en total por ciudad
+
+use("sample_airbnb")
+db.listingsAndReviews.aggregate([
+  {
+    $match: {
+      property_type: "Apartment",
+      $and: [
+        { amenities: { $elemMatch: { $eq: "Wifi" } } },
+        { amenities: { $elemMatch: { $eq: "Cable TV" } } }
+      ]
+    }
+  },
+  {
+    $group: {
+      _id: "$address.market",
+      total: { $sum: "$price" }
+    }
+  },
+])

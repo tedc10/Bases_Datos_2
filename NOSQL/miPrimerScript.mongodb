@@ -1,0 +1,56 @@
+use ("mundiall2026")
+
+db.selecciones.insertMany([
+
+    {nombre: "Colombia", colorCamiseta: "Amarillo", capital: "Bogotá", poblacion:60000000},
+    {nombre: "Inglaterra", capital: "Londres", mundialesGanados: 1},
+    {nombre: "República del congo", edadPromedio: 15, continente: "África"}
+
+]);
+
+use ("mundiall2026")
+
+db.jugadoresRetiro.insertMany([
+
+    {nombre: "Messi", pais: "Argentina", balonesDeOro: 8, hijos: 4},
+    {nombre: "CR7", pais: "Portugal", balonesDeOro: 5, golesEnMataMataMundiales: 0},
+    {nombre: "Neymar", pais: "Brasil", fiestasPreMundial: 320 }
+
+]);
+
+
+use ("mundiall2026")
+
+db.jugadoresPromesa.insertMany([
+
+    {_id:11, nombre: "Andresote", pais: "Colombia", golesEnUEB: 1, aura: 10000},
+    {apodo: "cuellos", pais: "Colombia", botellasDeAmarillo: 150, golesEnUEB: 0},
+    {nombre: "Stevao", pais: "Brasil", fiestasPreMundial: 1, club: "Chelsea"}
+
+]);
+
+use ("mundiall2026")
+
+db.prubeaid.insertMany([
+{_id:1, nombre:"pepe"}
+]);
+
+use ("mundiall2026")
+
+db.pruebaArray.insertMany([
+    {hobbies: ["Fumar vape", "Jugar valorant", "Ser feliz"]}
+    ]);
+
+    use ("mundiall2026")
+
+    db.nombreSolo.insertOne({
+        nombre:"Messi", apellido:"Cuchitini"
+    });
+
+
+     use ("mundiall2026")
+
+    db.nombreSolo.updateOne(
+        {nombre:"Messi"},
+        {$set: {nombre: "GOAT"}}
+);
