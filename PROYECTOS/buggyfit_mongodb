@@ -1,0 +1,1098 @@
+
+//  BUGGY'S FIT — Scripts MongoDB
+
+// SECCIÓN 1 — CREACIÓN DE COLECCIÓN CON VALIDACIÓN DE SCHEMA
+
+use("buggyfit");
+db.createCollection("historial", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      title: "Validación de documento Historial",
+      required: [
+        "_id",
+        "_class",
+        "ejercicios",
+        "fechaFin",
+        "idRutina",
+        "idUsuario",
+        "nombreRutina",
+        "volumenTotalKG"
+      ],
+      properties: {
+        _id: {
+          bsonType: "objectId",
+          description: "Identificador único generado por MongoDB"
+        },
+        _class: {
+          bsonType: "string",
+          description: "Clase Java mapeada por Spring Data MongoDB"
+        },
+        idUsuario: {
+          bsonType: "long",
+          description: "FK lógica al idUsuario de MySQL — obligatorio"
+        },
+        idRutina: {
+          bsonType: "long",
+          description: "FK lógica al idRutina de MySQL — obligatorio"
+        },
+        nombreRutina: {
+          bsonType: "string",
+          description: "Nombre de la rutina desnormalizado (Extended Reference Pattern)"
+        },
+        fechaFin: {
+          bsonType: "date",
+          description: "Fecha y hora en que finalizó la sesión de entrenamiento"
+        },
+        volumenTotalKG: {
+          bsonType: "double",
+          description: "Volumen total levantado en kg — sum(peso * reps) por sesión (Computed Pattern)"
+        },
+        ejercicios: {
+          bsonType: "array",
+          minItems: 1,
+          description: "Lista de ejercicios realizados en la sesión (Bucket Pattern)",
+          items: {
+            bsonType: "object",
+            required: ["idEjercicio", "nombreEjercicio", "orden", "series"],
+            properties: {
+              idEjercicio: {
+                bsonType: "long",
+                description: "FK lógica al idEjercicio de MySQL"
+              },
+              nombreEjercicio: {
+                bsonType: "string",
+                description: "Nombre desnormalizado del ejercicio"
+              },
+              orden: {
+                bsonType: "int",
+                minimum: 1,
+                description: "Posición del ejercicio dentro de la rutina"
+              },
+              series: {
+                bsonType: "array",
+                minItems: 1,
+                items: {
+                  bsonType: "object",
+                  required: ["numeroSerie", "pesoKG", "repeticiones", "descansoSegundo"],
+                  properties: {
+                    numeroSerie:     { bsonType: "int",    minimum: 1 },
+                    pesoKG:          { bsonType: "double", minimum: 0 },
+                    repeticiones:    { bsonType: "int",    minimum: 1 },
+                    descansoSegundo: { bsonType: "int",    minimum: 0 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  validationLevel:  "strict",
+  validationAction: "error"
+});
+
+
+db.historial.createIndex({ idUsuario: 1, fechaFin: -1 }); 
+db.historial.createIndex({ idRutina: 1 });                 
+db.historial.createIndex({ fechaFin: -1 });             
+db.historial.createIndex({ volumenTotalKG: -1 });         
+
+print("Colección 'historial' ");
+
+
+
+// SECCIÓN 2 — INSERCIÓN DE DOCUMENTOS DE MUESTRA
+
+use("buggyfit");
+db.historial.insertMany([
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("2"),
+    idRutina:      Long("1"),
+    nombreRutina:  "Push Day",
+    fechaFin:      new Date("2026-04-14T09:30:00Z"),
+    volumenTotalKG: 6120.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("10"),
+        nombreEjercicio: "Press Banca Plano",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 80.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 2, pesoKG: 80.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 3, pesoKG: 75.0, repeticiones:  8, descansoSegundo: 120 },
+          { numeroSerie: 4, pesoKG: 70.0, repeticiones:  8, descansoSegundo: 120 }
+        ]
+      },
+      {
+        idEjercicio:     Long("11"),
+        nombreEjercicio: "Press Banca Inclinado",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 60.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 60.0, repeticiones: 10, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 55.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("12"),
+        nombreEjercicio: "Aperturas con Mancuernas",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 15.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 15.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 17.5, repeticiones: 12, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("20"),
+        nombreEjercicio: "Extension de Triceps",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 30.0, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 30.0, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 3, pesoKG: 32.5, repeticiones: 12, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("21"),
+        nombreEjercicio: "Fondos en Paralelas",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG:  0.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG:  0.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 10.0, repeticiones: 12, descansoSegundo: 75 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("2"),
+    idRutina:      Long("1"),
+    nombreRutina:  "Push Day",
+    fechaFin:      new Date("2026-04-21T09:15:00Z"),
+    volumenTotalKG: 6540.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("10"),
+        nombreEjercicio: "Press Banca Plano",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 82.5, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 2, pesoKG: 82.5, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 3, pesoKG: 80.0, repeticiones:  8, descansoSegundo: 120 },
+          { numeroSerie: 4, pesoKG: 75.0, repeticiones:  8, descansoSegundo: 120 }
+        ]
+      },
+      {
+        idEjercicio:     Long("11"),
+        nombreEjercicio: "Press Banca Inclinado",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 62.5, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 62.5, repeticiones: 10, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 60.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("12"),
+        nombreEjercicio: "Aperturas con Mancuernas",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 17.5, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 17.5, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 20.0, repeticiones: 12, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("20"),
+        nombreEjercicio: "Extension de Triceps",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 32.5, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 32.5, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 3, pesoKG: 35.0, repeticiones: 12, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("21"),
+        nombreEjercicio: "Fondos en Paralelas",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG:  0.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 10.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 10.0, repeticiones: 12, descansoSegundo: 75 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("2"),
+    idRutina:      Long("2"),
+    nombreRutina:  "Pull Day",
+    fechaFin:      new Date("2026-04-15T10:00:00Z"),
+    volumenTotalKG: 5890.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("13"),
+        nombreEjercicio: "Jalon al Pecho",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 65.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 65.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 70.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 4, pesoKG: 70.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("14"),
+        nombreEjercicio: "Remo con Barra",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 90.0, repeticiones:  8, descansoSegundo: 120 },
+          { numeroSerie: 2, pesoKG: 90.0, repeticiones:  8, descansoSegundo: 120 },
+          { numeroSerie: 3, pesoKG: 85.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("15"),
+        nombreEjercicio: "Pull-Up",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG:  0.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 2, pesoKG:  0.0, repeticiones:  8, descansoSegundo: 90 },
+          { numeroSerie: 3, pesoKG:  0.0, repeticiones:  7, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("18"),
+        nombreEjercicio: "Curl de Biceps",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 22.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 22.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 3, pesoKG: 24.0, repeticiones: 10, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("19"),
+        nombreEjercicio: "Curl Martillo",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 18.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 18.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 3, pesoKG: 20.0, repeticiones: 10, descansoSegundo: 60 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("2"),
+    idRutina:      Long("3"),
+    nombreRutina:  "Leg Day",
+    fechaFin:      new Date("2026-04-16T08:00:00Z"),
+    volumenTotalKG: 9760.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("1"),
+        nombreEjercicio: "Sentadilla",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG:  80.0, repeticiones: 12, descansoSegundo: 120 },
+          { numeroSerie: 2, pesoKG:  90.0, repeticiones: 10, descansoSegundo: 120 },
+          { numeroSerie: 3, pesoKG:  90.0, repeticiones: 10, descansoSegundo: 150 },
+          { numeroSerie: 4, pesoKG: 100.0, repeticiones:  8, descansoSegundo: 150 }
+        ]
+      },
+      {
+        idEjercicio:     Long("2"),
+        nombreEjercicio: "Peso Muerto",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 100.0, repeticiones:  8, descansoSegundo: 150 },
+          { numeroSerie: 2, pesoKG: 110.0, repeticiones:  6, descansoSegundo: 150 },
+          { numeroSerie: 3, pesoKG: 110.0, repeticiones:  6, descansoSegundo: 180 }
+        ]
+      },
+      {
+        idEjercicio:     Long("3"),
+        nombreEjercicio: "Prensa de Pierna",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 140.0, repeticiones: 15, descansoSegundo: 90 },
+          { numeroSerie: 2, pesoKG: 150.0, repeticiones: 12, descansoSegundo: 90 },
+          { numeroSerie: 3, pesoKG: 150.0, repeticiones: 12, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("4"),
+        nombreEjercicio: "Extension de Cuadriceps",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 50.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 55.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 55.0, repeticiones: 12, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("5"),
+        nombreEjercicio: "Curl de Pierna",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 40.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 40.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 45.0, repeticiones: 12, descansoSegundo: 75 }
+        ]
+      },
+      {
+        idEjercicio:     Long("8"),
+        nombreEjercicio: "Elevacion de Pantorrillas",
+        orden: 6,
+        series: [
+          { numeroSerie: 1, pesoKG: 60.0, repeticiones: 20, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 60.0, repeticiones: 20, descansoSegundo: 45 },
+          { numeroSerie: 3, pesoKG: 70.0, repeticiones: 15, descansoSegundo: 60 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("3"),
+    idRutina:      Long("4"),
+    nombreRutina:  "Rutina Full Body",
+    fechaFin:      new Date("2026-04-17T18:45:00Z"),
+    volumenTotalKG: 5420.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("1"),
+        nombreEjercicio: "Sentadilla",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 50.0, repeticiones: 12, descansoSegundo: 90 },
+          { numeroSerie: 2, pesoKG: 55.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 3, pesoKG: 55.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("10"),
+        nombreEjercicio: "Press Banca Plano",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 55.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 60.0, repeticiones: 10, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 60.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("13"),
+        nombreEjercicio: "Jalon al Pecho",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 55.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 55.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 60.0, repeticiones: 10, descansoSegundo: 75 }
+        ]
+      },
+      {
+        idEjercicio:     Long("16"),
+        nombreEjercicio: "Press Militar",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 35.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 37.5, repeticiones: 10, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 37.5, repeticiones: 10, descansoSegundo: 75 }
+        ]
+      },
+      {
+        idEjercicio:     Long("18"),
+        nombreEjercicio: "Curl de Biceps",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 16.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 18.0, repeticiones: 12, descansoSegundo: 45 }
+        ]
+      },
+      {
+        idEjercicio:     Long("20"),
+        nombreEjercicio: "Extension de Triceps",
+        orden: 6,
+        series: [
+          { numeroSerie: 1, pesoKG: 22.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 24.0, repeticiones: 10, descansoSegundo: 45 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("3"),
+    idRutina:      Long("4"),
+    nombreRutina:  "Rutina Full Body",
+    fechaFin:      new Date("2026-04-21T19:10:00Z"),
+    volumenTotalKG: 5900.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("1"),
+        nombreEjercicio: "Sentadilla",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 55.0, repeticiones: 12, descansoSegundo: 90 },
+          { numeroSerie: 2, pesoKG: 60.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 3, pesoKG: 60.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("10"),
+        nombreEjercicio: "Press Banca Plano",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 60.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 62.5, repeticiones: 10, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 62.5, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("13"),
+        nombreEjercicio: "Jalon al Pecho",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 60.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 60.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 65.0, repeticiones: 10, descansoSegundo: 75 }
+        ]
+      },
+      {
+        idEjercicio:     Long("16"),
+        nombreEjercicio: "Press Militar",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 37.5, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 40.0, repeticiones: 10, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 40.0, repeticiones: 10, descansoSegundo: 75 }
+        ]
+      },
+      {
+        idEjercicio:     Long("18"),
+        nombreEjercicio: "Curl de Biceps",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 18.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 20.0, repeticiones: 10, descansoSegundo: 45 }
+        ]
+      },
+      {
+        idEjercicio:     Long("20"),
+        nombreEjercicio: "Extension de Triceps",
+        orden: 6,
+        series: [
+          { numeroSerie: 1, pesoKG: 24.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 25.0, repeticiones: 10, descansoSegundo: 45 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("4"),
+    idRutina:      Long("5"),
+    nombreRutina:  "Fuerza Maxima",
+    fechaFin:      new Date("2026-04-22T07:00:00Z"),
+    volumenTotalKG: 8950.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("1"),
+        nombreEjercicio: "Sentadilla",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 100.0, repeticiones:  5, descansoSegundo: 180 },
+          { numeroSerie: 2, pesoKG: 110.0, repeticiones:  5, descansoSegundo: 180 },
+          { numeroSerie: 3, pesoKG: 120.0, repeticiones:  3, descansoSegundo: 240 },
+          { numeroSerie: 4, pesoKG: 120.0, repeticiones:  3, descansoSegundo: 240 }
+        ]
+      },
+      {
+        idEjercicio:     Long("2"),
+        nombreEjercicio: "Peso Muerto",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 130.0, repeticiones:  5, descansoSegundo: 180 },
+          { numeroSerie: 2, pesoKG: 140.0, repeticiones:  3, descansoSegundo: 240 },
+          { numeroSerie: 3, pesoKG: 150.0, repeticiones:  2, descansoSegundo: 300 }
+        ]
+      },
+      {
+        idEjercicio:     Long("10"),
+        nombreEjercicio: "Press Banca Plano",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 100.0, repeticiones:  5, descansoSegundo: 180 },
+          { numeroSerie: 2, pesoKG: 105.0, repeticiones:  4, descansoSegundo: 180 },
+          { numeroSerie: 3, pesoKG: 110.0, repeticiones:  3, descansoSegundo: 240 }
+        ]
+      },
+      {
+        idEjercicio:     Long("14"),
+        nombreEjercicio: "Remo con Barra",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 100.0, repeticiones:  6, descansoSegundo: 120 },
+          { numeroSerie: 2, pesoKG: 100.0, repeticiones:  6, descansoSegundo: 120 },
+          { numeroSerie: 3, pesoKG: 105.0, repeticiones:  5, descansoSegundo: 150 }
+        ]
+      },
+      {
+        idEjercicio:     Long("16"),
+        nombreEjercicio: "Press Militar",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 60.0, repeticiones:  6, descansoSegundo: 120 },
+          { numeroSerie: 2, pesoKG: 65.0, repeticiones:  5, descansoSegundo: 150 },
+          { numeroSerie: 3, pesoKG: 65.0, repeticiones:  5, descansoSegundo: 150 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("4"),
+    idRutina:      Long("5"),
+    nombreRutina:  "Fuerza Maxima",
+    fechaFin:      new Date("2026-05-06T06:55:00Z"),
+    volumenTotalKG: 9380.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("1"),
+        nombreEjercicio: "Sentadilla",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 105.0, repeticiones:  5, descansoSegundo: 180 },
+          { numeroSerie: 2, pesoKG: 115.0, repeticiones:  5, descansoSegundo: 180 },
+          { numeroSerie: 3, pesoKG: 125.0, repeticiones:  3, descansoSegundo: 240 },
+          { numeroSerie: 4, pesoKG: 125.0, repeticiones:  3, descansoSegundo: 240 }
+        ]
+      },
+      {
+        idEjercicio:     Long("2"),
+        nombreEjercicio: "Peso Muerto",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 135.0, repeticiones:  5, descansoSegundo: 180 },
+          { numeroSerie: 2, pesoKG: 145.0, repeticiones:  3, descansoSegundo: 240 },
+          { numeroSerie: 3, pesoKG: 155.0, repeticiones:  2, descansoSegundo: 300 }
+        ]
+      },
+      {
+        idEjercicio:     Long("10"),
+        nombreEjercicio: "Press Banca Plano",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 105.0, repeticiones:  5, descansoSegundo: 180 },
+          { numeroSerie: 2, pesoKG: 110.0, repeticiones:  4, descansoSegundo: 180 },
+          { numeroSerie: 3, pesoKG: 112.5, repeticiones:  3, descansoSegundo: 240 }
+        ]
+      },
+      {
+        idEjercicio:     Long("14"),
+        nombreEjercicio: "Remo con Barra",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 102.5, repeticiones:  6, descansoSegundo: 120 },
+          { numeroSerie: 2, pesoKG: 105.0, repeticiones:  6, descansoSegundo: 120 },
+          { numeroSerie: 3, pesoKG: 107.5, repeticiones:  5, descansoSegundo: 150 }
+        ]
+      },
+      {
+        idEjercicio:     Long("16"),
+        nombreEjercicio: "Press Militar",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 62.5, repeticiones:  6, descansoSegundo: 120 },
+          { numeroSerie: 2, pesoKG: 67.5, repeticiones:  5, descansoSegundo: 150 },
+          { numeroSerie: 3, pesoKG: 67.5, repeticiones:  5, descansoSegundo: 150 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("5"),
+    idRutina:      Long("6"),
+    nombreRutina:  "Cardio y Gluteos",
+    fechaFin:      new Date("2026-04-18T06:30:00Z"),
+    volumenTotalKG: 6240.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("6"),
+        nombreEjercicio: "Hip Thrust",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG:  70.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG:  80.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG:  80.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 4, pesoKG:  90.0, repeticiones: 10, descansoSegundo: 75 }
+        ]
+      },
+      {
+        idEjercicio:     Long("7"),
+        nombreEjercicio: "Zancadas",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 20.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 20.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 24.0, repeticiones: 10, descansoSegundo: 75 }
+        ]
+      },
+      {
+        idEjercicio:     Long("9"),
+        nombreEjercicio: "Sentadilla Sumo",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 50.0, repeticiones: 15, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 55.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 55.0, repeticiones: 12, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("5"),
+        nombreEjercicio: "Curl de Pierna",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 35.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 35.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 40.0, repeticiones: 12, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("8"),
+        nombreEjercicio: "Elevacion de Pantorrillas",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 50.0, repeticiones: 20, descansoSegundo: 30 },
+          { numeroSerie: 2, pesoKG: 50.0, repeticiones: 20, descansoSegundo: 30 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("6"),
+    idRutina:      Long("7"),
+    nombreRutina:  "Volumen Total",
+    fechaFin:      new Date("2026-04-19T19:40:00Z"),
+    volumenTotalKG: 7380.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("10"),
+        nombreEjercicio: "Press Banca Plano",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 70.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 70.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 75.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 4, pesoKG: 75.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("12"),
+        nombreEjercicio: "Aperturas con Mancuernas",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 18.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 18.0, repeticiones: 15, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 20.0, repeticiones: 12, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("13"),
+        nombreEjercicio: "Jalon al Pecho",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 70.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 70.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 75.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("14"),
+        nombreEjercicio: "Remo con Barra",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 80.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 2, pesoKG: 85.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 3, pesoKG: 85.0, repeticiones:  8, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("17"),
+        nombreEjercicio: "Elevaciones Laterales",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 12.0, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 12.0, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 3, pesoKG: 14.0, repeticiones: 12, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("18"),
+        nombreEjercicio: "Curl de Biceps",
+        orden: 6,
+        series: [
+          { numeroSerie: 1, pesoKG: 22.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 24.0, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 3, pesoKG: 24.0, repeticiones: 10, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("20"),
+        nombreEjercicio: "Extension de Triceps",
+        orden: 7,
+        series: [
+          { numeroSerie: 1, pesoKG: 30.0, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 32.5, repeticiones: 12, descansoSegundo: 45 },
+          { numeroSerie: 3, pesoKG: 32.5, repeticiones: 12, descansoSegundo: 60 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("7"),
+    idRutina:      Long("8"),
+    nombreRutina:  "Rutina Principiante",
+    fechaFin:      new Date("2026-05-05T10:30:00Z"),
+    volumenTotalKG: 2640.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("1"),
+        nombreEjercicio: "Sentadilla",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 30.0, repeticiones: 12, descansoSegundo: 90 },
+          { numeroSerie: 2, pesoKG: 35.0, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 3, pesoKG: 35.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("10"),
+        nombreEjercicio: "Press Banca Plano",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 30.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 32.5, repeticiones: 10, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 32.5, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("13"),
+        nombreEjercicio: "Jalon al Pecho",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 35.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 35.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 40.0, repeticiones: 10, descansoSegundo: 75 }
+        ]
+      },
+      {
+        idEjercicio:     Long("16"),
+        nombreEjercicio: "Press Militar",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 20.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 22.5, repeticiones: 10, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("18"),
+        nombreEjercicio: "Curl de Biceps",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 10.0, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 12.0, repeticiones: 12, descansoSegundo: 45 }
+        ]
+      },
+      {
+        idEjercicio:     Long("20"),
+        nombreEjercicio: "Extension de Triceps",
+        orden: 6,
+        series: [
+          { numeroSerie: 1, pesoKG: 15.0, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 17.5, repeticiones: 12, descansoSegundo: 45 }
+        ]
+      }
+    ]
+  },
+
+  {
+    _class: "com.buggyfit.backend.model.Historial",
+    idUsuario:     Long("7"),
+    idRutina:      Long("8"),
+    nombreRutina:  "Rutina Principiante",
+    fechaFin:      new Date("2026-05-12T10:15:00Z"),
+    volumenTotalKG: 2980.0,
+    ejercicios: [
+      {
+        idEjercicio:     Long("1"),
+        nombreEjercicio: "Sentadilla",
+        orden: 1,
+        series: [
+          { numeroSerie: 1, pesoKG: 35.0, repeticiones: 12, descansoSegundo: 90 },
+          { numeroSerie: 2, pesoKG: 37.5, repeticiones: 10, descansoSegundo: 90 },
+          { numeroSerie: 3, pesoKG: 40.0, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("10"),
+        nombreEjercicio: "Press Banca Plano",
+        orden: 2,
+        series: [
+          { numeroSerie: 1, pesoKG: 35.0, repeticiones: 12, descansoSegundo: 75 },
+          { numeroSerie: 2, pesoKG: 35.0, repeticiones: 10, descansoSegundo: 75 },
+          { numeroSerie: 3, pesoKG: 37.5, repeticiones: 10, descansoSegundo: 90 }
+        ]
+      },
+      {
+        idEjercicio:     Long("13"),
+        nombreEjercicio: "Jalon al Pecho",
+        orden: 3,
+        series: [
+          { numeroSerie: 1, pesoKG: 40.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 40.0, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 3, pesoKG: 42.5, repeticiones: 10, descansoSegundo: 75 }
+        ]
+      },
+      {
+        idEjercicio:     Long("16"),
+        nombreEjercicio: "Press Militar",
+        orden: 4,
+        series: [
+          { numeroSerie: 1, pesoKG: 22.5, repeticiones: 12, descansoSegundo: 60 },
+          { numeroSerie: 2, pesoKG: 25.0, repeticiones: 10, descansoSegundo: 60 }
+        ]
+      },
+      {
+        idEjercicio:     Long("18"),
+        nombreEjercicio: "Curl de Biceps",
+        orden: 5,
+        series: [
+          { numeroSerie: 1, pesoKG: 12.0, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 14.0, repeticiones: 12, descansoSegundo: 45 }
+        ]
+      },
+      {
+        idEjercicio:     Long("20"),
+        nombreEjercicio: "Extension de Triceps",
+        orden: 6,
+        series: [
+          { numeroSerie: 1, pesoKG: 17.5, repeticiones: 15, descansoSegundo: 45 },
+          { numeroSerie: 2, pesoKG: 20.0, repeticiones: 12, descansoSegundo: 45 }
+        ]
+      }
+    ]
+  }
+
+]);
+
+
+// SECCIÓN 3 — CONSULTAS 
+
+use("buggyfit");
+db.historial.find(
+  { idUsuario: Long("2") },
+  { nombreRutina: 1, fechaFin: 1, volumenTotalKG: 1, _id: 0 }
+).sort({ fechaFin: -1 });
+
+// Última sesión registrada por cada usuario 
+use("buggyfit");
+db.historial.aggregate([
+  { $sort: { idUsuario: 1, fechaFin: -1 } },
+  {
+    $group: {
+      _id:           "$idUsuario",
+      ultimaFecha:   { $first: "$fechaFin" },
+      ultimaRutina:  { $first: "$nombreRutina" },
+      ultimoVolumen: { $first: "$volumenTotalKG" }
+    }
+  },
+  { $sort: { _id: 1 } },
+  {
+    $project: {
+      idUsuario:     "$_id",
+      ultimaRutina:  1,
+      ultimaFecha:   1,
+      ultimoVolumen: 1,
+      _id: 0
+    }
+  }
+]);
+
+
+// Ranking de volumen total acumulado por usuario
+use("buggyfit");
+db.historial.aggregate([
+  {
+    $group: {
+      _id:           "$idUsuario",
+      volumenTotal:  { $sum: "$volumenTotalKG" },
+      totalSesiones: { $count: {} }
+    }
+  },
+  { $sort: { volumenTotal: -1 } },
+  {
+    $project: {
+      idUsuario:     "$_id",
+      volumenTotal:  1,
+      totalSesiones: 1,
+      _id: 0
+    }
+  }
+]);
+
+// Sesiones por rutina + volumen promedio
+use("buggyfit");
+db.historial.aggregate([
+  {
+    $group: {
+      _id:         "$nombreRutina",
+      sesiones:    { $count: {} },
+      volumenProm: { $avg: "$volumenTotalKG" },
+      volumenMax:  { $max: "$volumenTotalKG" }
+    }
+  },
+  { $sort: { sesiones: -1 } },
+  {
+    $project: {
+      rutina:      "$_id",
+      sesiones:    1,
+      volumenProm: { $round: ["$volumenProm", 2] },
+      volumenMax:  1,
+      _id: 0
+    }
+  }
+]);
+
+
+// Progresión de volumen del usuario 4 en "Fuerza Maxima" 
+use("buggyfit");
+db.historial.find(
+  { idUsuario: Long("4"), nombreRutina: "Fuerza Maxima" },
+  { fechaFin: 1, volumenTotalKG: 1, _id: 0 }
+).sort({ fechaFin: 1 });
+
+
+// Total de series realizadas por sesión 
+use("buggyfit");
+db.historial.aggregate([
+  { $unwind: "$ejercicios" },
+  {
+    $group: {
+      _id:          "$_id",
+      nombreRutina: { $first: "$nombreRutina" },
+      idUsuario:    { $first: "$idUsuario" },
+      fechaFin:     { $first: "$fechaFin" },
+      totalSeries:  { $sum: { $size: "$ejercicios.series" } }
+    }
+  },
+  { $sort: { totalSeries: -1 } },
+  {
+    $project: {
+      idUsuario:    1,
+      nombreRutina: 1,
+      fechaFin:     1,
+      totalSeries:  1,
+      _id: 0
+    }
+  }
+]);
+
+
+// Ejercicios más frecuentes en toda la colección 
+use("buggyfit");
+db.historial.aggregate([
+  { $unwind: "$ejercicios" },
+  {
+    $group: {
+      _id:         "$ejercicios.nombreEjercicio",
+      apariciones: { $count: {} },
+      totalSeries: { $sum: { $size: "$ejercicios.series" } }
+    }
+  },
+  { $sort: { apariciones: -1 } },
+  {
+    $project: {
+      ejercicio:   "$_id",
+      apariciones: 1,
+      totalSeries: 1,
+      _id: 0
+    }
+  }
+]);
+
+
+// Peso máximo levantado por ejercicio 
+use("buggyfit");
+db.historial.aggregate([
+  { $unwind: "$ejercicios" },
+  { $unwind: "$ejercicios.series" },
+  {
+    $group: {
+      _id:     "$ejercicios.nombreEjercicio",
+      pesoMax: { $max: "$ejercicios.series.pesoKG" }
+    }
+  },
+  { $sort: { pesoMax: -1 } },
+  {
+    $project: {
+      ejercicio: "$_id",
+      pesoMax:   1,
+      _id: 0
+    }
+  }
+]);
+
+
+// Promedio de descanso por ejercicio 
+use("buggyfit");
+db.historial.aggregate([
+  { $unwind: "$ejercicios" },
+  { $unwind: "$ejercicios.series" },
+  {
+    $group: {
+      _id:              "$ejercicios.nombreEjercicio",
+      promedioDescanso: { $avg: "$ejercicios.series.descansoSegundo" }
+    }
+  },
+  { $sort: { promedioDescanso: -1 } },
+  {
+    $project: {
+      ejercicio:        "$_id",
+      promedioDescanso: { $round: ["$promedioDescanso", 1] },
+      _id: 0
+    }
+  }
+]);
+
+
+// Top 3 sesiones con mayor volumen total
+use("buggyfit");
+db.historial.find(
+  {},
+  { idUsuario: 1, nombreRutina: 1, fechaFin: 1, volumenTotalKG: 1, _id: 0 }
+).sort({ volumenTotalKG: -1 }).limit(3);
+
