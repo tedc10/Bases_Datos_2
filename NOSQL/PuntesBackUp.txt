@@ -1,0 +1,45 @@
+Data WareHouse: Almacén de datos para permitir a las actividades de inteligencia de un negocio, sirve para ayudar a ANALISIS DE DATOS. 
+
+WareHouse: Almacén de datos
+
+Como funciona? Datos se almacena y se analizan para obtener mejoras en rendimiento de negocios.
+
+Para que? Mejorar, ser más efectivo, aumentar ingresos, no perder frente a lo competencia.
+
+Las data warehouse son la base para los sistemas de gestión de relaciones con los clientes, ya que pueden ser utilizados para la consolidación de los datos del cliente y la identificación de áreas de satisfacción.
+
+ETL (Extracción transformación y carga de los datos): De todos los puntos de donde quiera tener información (Cualquier base de datos, con cualquier tipo de archivo) -> Se utiliza cuando ejercicios previos a cargar la informacion -> Mas tiempo a que lleguen los datos al data warehouse.
+
+ETL: Carga mayor, tiempos mayores, pero limpiar datos previos-
+
+DATOS - ETL - DATA WAREHOUSE - INFORMES, ANALISIS, DATA WINNING 
+
+OLAP: On line Analytical Processing
+
+ELT: EXTRAIGO, CARGO Y TRANSFORMO 
+
+DATA MINING: Minería de datos, en general es el proceso de analizar los datos desde diferentes perspectivas y resumirlos en información útil; Información que puede ser utilizada para aumentar los ingresos, reducir los costos o ambos. El data mining descubre patrones ocultos en los datos.
+
+ETL - Instalación (pentaho y hacer ETL sencilla del proyecto y hacer un análisis)
+
+Back Up: NUNCA PESAN LO MISMO QUE LA BASE DE DATOS, PESAN MENOS QUE LA BASE DE DATOS, GENERA UNA COPIA COMPACTA.
+
+RTO: Objetivo de Tiempo de Recuperación
+RPO: Objetivo de Punto de Recuperación
+
+Back up SCHEMA: 
+Back up FULL: A toda la base de datos. -> Solo cuando no es mucha información porque puede generar tiempos demorados. 
+Back up INCREMENTALES: Incremento (Dia a día) -> USAR EN BASES DE DATOS CRÍTICAS
+Back up ACUMULATIVOS: Acumula la información, día a día va aumentando el tamaño de memoria gastado Y EL TIEMPO. ->  
+
+
+Para una base de 8TB en la semana.
+2 - D: INCREMENTAL (30 - 60 MINS)
+3 - L: INCREMENTAL (30 - 60 MINS) --- > Se guarda los del sábado, domingo y el lunes
+4 - M: INCREMENTAL (30 - 60 MINS)
+5 - M: INCREMENTAL (30 - 60 MINS)
+6 - J: INCREMENTAL (30 - 60 MINS)
+7 - V: INCREMENTAL (30 - 60 MINS)
+1 S: FULL (6:00 am hasta las 3:00 pm)
+
+
